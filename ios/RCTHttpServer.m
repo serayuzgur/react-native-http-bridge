@@ -108,7 +108,9 @@ RCT_EXPORT_METHOD(respond: (NSString *) requestId
         [_completionBlocks removeObjectForKey:requestId];
     }
 
-    completionBlock(requestResponse);
+    if (completionBlock) {
+        completionBlock(requestResponse);
+    }
 }
 
 @end
