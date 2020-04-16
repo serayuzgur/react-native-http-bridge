@@ -76,7 +76,8 @@ RCT_EXPORT_METHOD(start:(NSInteger) port
         [self initResponseReceivedFor:_webServer forType:@"DELETE"];
         
         [_webServer startWithPort:port bonjourName:serviceName];
-        [self.bridge.eventDispatcher sendAppEventWithName:@"httpServerStarted"];
+        [bridge.eventDispatcher sendAppEventWithName:@"httpServerStarted"body:@{@"result": @true}];
+
     });
 }
 
@@ -88,7 +89,7 @@ RCT_EXPORT_METHOD(stop)
         [_webServer stop];
         [_webServer removeAllHandlers];
         _webServer = nil;
-        [self.bridge.eventDispatcher sendAppEventWithName:@"httpServerStopped"];
+        [bridge.eventDispatcher sendAppEventWithName:@"httpServerStopped"body:@{@"result": @true}];
     }
 }
 
