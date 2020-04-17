@@ -45,17 +45,20 @@ RCT_EXPORT_MODULE();
                                                              body:@{@"requestId": requestId,
                                                                     @"postData": dataRequest.jsonObject,
                                                                     @"type": type,
+                                                                    @"remoteAddess":request.remoteAddressString,
                                                                     @"url": request.URL.relativeString}];
             } else {
                 [self.bridge.eventDispatcher sendAppEventWithName:@"httpServerResponseReceived"
                                                              body:@{@"requestId": requestId,
                                                                     @"type": type,
+                                                                    @"remoteAddess":request.remoteAddressString,
                                                                     @"url": request.URL.relativeString}];
             }
         } @catch (NSException *exception) {
             [self.bridge.eventDispatcher sendAppEventWithName:@"httpServerResponseReceived"
                                                          body:@{@"requestId": requestId,
                                                                 @"type": type,
+                                                                @"remoteAddess":request.remoteAddressString,
                                                                 @"url": request.URL.relativeString}];
         }
     }];
