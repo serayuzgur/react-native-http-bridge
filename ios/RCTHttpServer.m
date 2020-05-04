@@ -29,10 +29,9 @@ RCT_EXPORT_MODULE();
                           requestClass:[GCDWebServerDataRequest class]
                      asyncProcessBlock:^(GCDWebServerRequest* request, GCDWebServerCompletionBlock completionBlock) {
         
-        long long milliseconds = (long long)([[NSDate date] timeIntervalSince1970] * 1000.0);
-        int r = arc4random_uniform(1000000);
-        NSString *requestId = [NSString stringWithFormat:@"%lld:%d", milliseconds, r];
-
+        NSUUID  *UUID = [NSUUID UUID];
+        NSString* requestId = [UUID UUIDString];
+        
         _completionBlocks = [[NSMutableDictionary alloc] init];
          @synchronized (self) {
              [_completionBlocks setObject:completionBlock forKey:requestId];
@@ -70,18 +69,24 @@ RCT_EXPORT_METHOD(start:(NSInteger) port
     RCTLogInfo(@"Running HTTP bridge server: %ld", port);
     NSMutableDictionary *_requestResponses = [[NSMutableDictionary alloc] init];
     
-    dispatch_sync(dispatch_get_main_queue(), ^{
-        _webServer = [[GCDWebServer alloc] init];
-        
-        [self initResponseReceivedFor:_webServer forType:@"POST"];
-        [self initResponseReceivedFor:_webServer forType:@"PUT"];
-        [self initResponseReceivedFor:_webServer forType:@"GET"];
-        [self initResponseReceivedFor:_webServer forType:@"DELETE"];
-        
-        [_webServer startWithPort:port bonjourName:serviceName];
-        [bridge.eventDispatcher sendAppEventWithName:@"httpServerStarted"body:@{@"result": @true}];
+    @try {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            _webServer = [[GCDWebServer alloc] init];
+            
+            [self initResponseReceivedFor:_webServer forType:@"POST"];
+            [self initResponseReceivedFor:_webServer forType:@"PUT"];
+            [self initResponseReceivedFor:_webServer forType:@"GET"];
+            [self initResponseReceivedFor:_webServer forType:@"DELETE"];
+            
+            [_webServer startWithPort:port bonjourName:serviceName];
+            [bridge.eventDispatcher sendAppEventWithName:@"httpServerStarted"body:@{@"result": @true}];
 
-    });
+        });
+    }
+    @catch (NSException *exception) {
+        NSLog(@"%@", exception.reason);
+        [bridge.eventDispatcher sendAppEventWithName:@"httpServerStarted"body:@{@"result": @false, @"error":exception}];
+    }
 }
 
 RCT_EXPORT_METHOD(stop)
@@ -89,10 +94,16 @@ RCT_EXPORT_METHOD(stop)
     RCTLogInfo(@"Stopping HTTP bridge server");
     
     if (_webServer != nil) {
-        [_webServer stop];
-        [_webServer removeAllHandlers];
-        _webServer = nil;
-        [bridge.eventDispatcher sendAppEventWithName:@"httpServerStopped"body:@{@"result": @true}];
+        @try {
+            [_webServer stop];
+            [_webServer removeAllHandlers];
+            _webServer = nil;
+            [bridge.eventDispatcher sendAppEventWithName:@"httpServerStopped"body:@{@"result": @true}];
+        }
+        @catch (NSException *exception) {
+            NSLog(@"%@", exception.reason);
+            [bridge.eventDispatcher sendAppEventWithName:@"httpServerStopped"body:@{@"result": @false, @"error":exception}];
+        }
     }
 }
 
